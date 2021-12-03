@@ -42,7 +42,7 @@ var conn *sql.DB
 
 func main() {
 	now := time.Now()
-	log.Printf("start: %v", now)
+	log.Printf("start:  %v", now)
 
 	log.SetFlags(log.Lshortfile | log.Lmicroseconds)
 
