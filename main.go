@@ -50,24 +50,12 @@ func main() {
 
 	datas := getRowData()
 
-	withOutGoroutine(datas)
+	// withOutGoroutine(datas)
+
+	withGoroutine(datas)
+
 
 	log.Printf("end: %v", time.Since(now))
-}
-
-func withGoroutine(datas []User)  {
-	var wg sync.WaitGroup
-
-	for _, data := range datas {
-		wg.Add(1)
-		go func() {
-			log.Printf("data on go: %v", data)
-			defer wg.Done()
-			insert(data)
-		}()
-	}
-
-	wg.Wait()
 }
 
 func withOutGoroutine(datas []User)  {
@@ -75,6 +63,39 @@ func withOutGoroutine(datas []User)  {
 		insert(data)
 	}
 }
+
+func worker(jobs <-chan User, wg *sync.WaitGroup) {
+	for j := range jobs {
+		// fmt.Printf("worker %d processing job %d\n", id, j)
+		insert(j)
+		// fmt.Printf("worker %d finish job %d\n", id, j)
+		// time.Sleep(time.Second)
+		wg.Done()
+	}
+}
+
+func withGoroutine(datas []User)  {
+	jobs := make(chan User, len(datas))
+	wg := sync.WaitGroup{}
+
+	for w := 1; w <= 100; w++ {
+		go worker(jobs, &wg)
+	}
+
+	for _, data := range datas {
+		jobs <- data
+		wg.Add(1)
+	}
+
+	close(jobs)
+	wg.Wait()
+
+	// for a := 1; a <= 9; a++ {
+	// 	<-results
+	// }
+}
+
+
 
 func insert(data User)  {
 	stmt, err := conn.Prepare("INSERT INTO users(id, nik, emp_name, emp_position) VALUES($1, $2, $3, $4)")
